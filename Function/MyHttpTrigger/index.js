@@ -2,31 +2,23 @@ const createHandler = require("azure-function-express").createHandler;
 const express = require("express");
 const passport = require('passport');
 const https = require("https");
-const http = require("http"); // for localhost testing
+const fetch = require('node-fetch');
 const qs = require("querystring");
+const auth = require('../auth.json');
 
-var BearerStrategy = require("passport-azure-ad").BearerStrategy;
+const BearerStrategy = require("passport-azure-ad").BearerStrategy;
 
-var tenantID = "<tenantid>";
-var clientID = "<appid>";
-var appIdURI = "https://middleapi.<tenantname>.onmicrosoft.com";
-
-var tenantName = "<tenantname>";
-var clientSecret = "p@ssword1"; // This is okay only because it's a demo :)
-var resourceScope = "https://secureapi.<tenantname>.onmicrosoft.com/user_impersonation"; // Scope for the next API (i.e. "<resource-api-appIdURI>/openid")
-var resourceHost = "localhost"; // Hostname for next API (i.e. "localhost", "app-name.onmicrosoft.com", etc.) 
-var resourcePort = "7072"; // For localhost testing
-
-var options = {
-    identityMetadata: `https://login.microsoftonline.com/${tenantID}/v2.0/.well-known/openid-configuration`,
-    clientID: clientID,
-    issuer: `https://sts.windows.net/${tenantID}/`,
-    audience: appIdURI,
-    loggingLevel: "info",
-    passReqToCallback: false
+const options = {
+    identityMetadata: `https://login.microsoftonline.com/${auth.tenantID}/v2.0/.well-known/openid-configuration`,
+    clientID: auth.clientID,
+    issuer: `https://login.microsoftonline.com/${auth.tenantID}/v2.0`,
+    validateIssuer: auth.validateIssuer,
+    audience: auth.audience,
+    loggingLevel: auth.loggingLevel,
+    passReqToCallback: auth.passReqToCallback,
 };
 
-var bearerStrategy = new BearerStrategy(options, function (token, done) {
+const bearerStrategy = new BearerStrategy(options, function (token, done) {
     done(null, {}, token);
 });
 
@@ -36,6 +28,13 @@ app.use(require('morgan')('combined'));
 app.use(require('body-parser').urlencoded({ "extended": true }));
 app.use(passport.initialize());
 passport.use(bearerStrategy);
+
+// Enable CORS (for local testing only -remove in production/deployment)
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Authorization, Origin, X-Requested-With, Content-Type, Accept');
+    next();
+});
 
 // This is where your API methods are exposed
 app.get(
@@ -48,25 +47,23 @@ app.get(
         const userToken = req.get("authorization");
 
         // request new token and use it to call resource API on user's behalf
-        getNewAccessToken(userToken, newTokenRes => {
+        getNewAccessToken(userToken, async (newTokenRes) => {
             let tokenObj = JSON.parse(newTokenRes);
-            callResourceAPI(tokenObj['access_token'], (apiResponse) => {
-                res.status(200).json(JSON.parse(apiResponse));
-            });
+            apiResponse = await callResourceAPI(tokenObj['access_token'], auth.resourceUri)
+            res.status(200).json(apiResponse);
         });
-
     }
 );
 
-function getNewAccessToken(userToken, callback) {
+async function getNewAccessToken(userToken, callback) {
     // is in form "Bearer XYZ..."
     const [bearer, tokenValue] = userToken.split(" ");
 
     let payload = qs.stringify({
         grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-        client_id: clientID,
-        client_secret: clientSecret,
-        scope: resourceScope,
+        client_id: auth.clientID,
+        client_secret: auth.clientSecret,
+        scope: auth.resourceScope,
         assertion: tokenValue,
         requested_token_use: 'on_behalf_of'
     });
@@ -74,7 +71,7 @@ function getNewAccessToken(userToken, callback) {
     let options = {
         method: "POST",
         host: "login.microsoftonline.com",
-        path: `/${tenantName}.onmicrosoft.com/oauth2/v2.0/token`,
+        path: `/${auth.tenantName}/oauth2/v2.0/token`,
         port: "443",
         headers: {
             "Accept": "*/*",
@@ -86,12 +83,15 @@ function getNewAccessToken(userToken, callback) {
 
     let req = https.request(options, res => {
         let data = '';
+
         res.on("data", chunk => {
             data += chunk;
         });
+
         res.on("end", () => {
             callback(data);
         });
+
         res.on("error", err => {
             console.log(`ERROR ${res.statusCode}: ${err}`);
         })
@@ -101,25 +101,23 @@ function getNewAccessToken(userToken, callback) {
     req.end();
 }
 
-function callResourceAPI(newTokenValue, callback) {
-    let options = {
-        host: resourceHost,
-        port: resourcePort,
-        path: "/api",
+async function callResourceAPI(newTokenValue, resourceURI) {
+  
+    const options = {
+        method: "GET",
         headers: {
-            "Authorization": `Bearer ${newTokenValue}`
-        }
-    };
+            "Authorization": `Bearer ${newTokenValue}`,
+            "Content-type": "application/json",
+            "Accept": "application/json",
+            "Accept-Charset": "utf-8"
+        },
+      };
+    
+    const response = await fetch(resourceURI, options);
 
-    http.get(options, res => {
-        let data = '';
-        res.on("data", chunk => {
-            data += chunk;
-        });
-        res.on("end", () => {
-            callback(data);
-        })
-    });
+	const json = await response.json();
+    
+    return json;
 }
 
 module.exports = createHandler(app);
