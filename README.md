@@ -187,6 +187,16 @@ Once you install the **client** app, do:
 1. Find the key `Enter_the_Web_Api_Uri_Here` and replace the existing value with the coordinates of your web API (e.g. `http://localhost:7071/api`).
 1. Find the key `Enter_the_Web_Api_Scope_Here` and replace the existing value with the scopes for your web API (e.g. `api://cd96451f-9709-4a95-b1f5-79da05cf8502/.default`).
 
+Then, for the **OBO** flow, add this client application as a knownClientApplication. To do so, navigate to **Azure Portal**. Then:
+
+- Find your **App Registration**.
+- Navigate to do **Manifest**.
+- Add the Application ID (client ID) of your client app as:
+
+```json
+    "knownClientApplications": ["<your-client-app-ID>"],
+```
+
 > :information_source: Did the sample not work for you as expected? Then please reach out to us using the [GitHub Issues](../../../../issues) page.
 
 ## About the code
