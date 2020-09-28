@@ -1,0 +1,56 @@
+{
+    "Sample": {
+      "Title": "A Node.js Azure Function Web API secured by Azure AD and calling MS Graph API on behalf of a user",
+      "Level": 200,
+      "Client": "JavaScript SPA",
+      "Service": "Node.js Web Api",
+      "RepositoryUrl": "ms-identity-nodejs-webapi-onbehalfof-azurefunctions",
+      "Endpoint": "AAD v2.0"
+    },
+    "AADApps": [
+      {
+        "Id": "service",
+        "Name": "ms-identity-nodejs-webapi-onbehalfof-azurefunctions",
+        "Kind": "WebApi",
+        "HomePage": "http://localhost:7071/api",
+        "Audience": "AzureADMyOrg",
+        "PasswordCredentials": "Auto",
+        "RequiredResourcesAccess": [
+            {
+              "Resource": "Microsoft Graph",
+              "DelegatedPermissions": [ "offline_access", "user.read" ]
+            }
+          ],
+          "ManualSteps": [
+            {
+              "Comment": "Navigate to the Manifest and set 'accessTokenAcceptedVersion' to 2 instead of null"
+            }
+          ]
+      }
+    ],
+    "CodeConfiguration": [
+      {
+        "App": "service",
+        "SettingKind": "JSON",
+        "SettingFile": "\\..\\Function\\auth.json",
+        "Mappings": [
+          {
+            "key": "clientID",
+            "value": ".AppId"
+          },
+          {
+            "key": "tenantID",
+            "value": "$tenantId"
+          },
+          {
+            "key": "audience",
+            "value": ".AppId"
+          },
+          {
+            "key": "clientSecret",
+            "value": ".AppKey"
+          }
+        ]
+      }
+    ]
+  }

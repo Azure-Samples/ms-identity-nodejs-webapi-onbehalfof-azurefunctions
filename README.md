@@ -8,9 +8,9 @@ products:
   - azure-active-directory
 name: A NodeJS Azure Function Web API secured by Azure AD
 urlFragment: ms-identity-nodejs-webapi-onbehalfof-azurefunctions
-description: "This sample demonstrates a NodeJS Azure Function Web API secured by Azure AD"
+description: "This sample demonstrates a Node.js Azure Function Web API secured by Azure AD calling MS Graph API on behalf of a signed-in user"
 ---
-# A NodeJS Azure Function Web API secured by Azure AD
+# A Node.js Azure Function Web API secured by Azure AD and calling MS Graph API on behalf of a user
 
  1. [Overview](#overview)
  1. [Scenario](#scenario)
