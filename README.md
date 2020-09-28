@@ -6,11 +6,11 @@ products:
   - nodejs
   - azure-functions
   - azure-active-directory
-name: A NodeJS Azure Function web API secured by Azure AD
+name: A NodeJS Azure Function Web API secured by Azure AD
 urlFragment: ms-identity-nodejs-webapi-onbehalfof-azurefunctions
-description: "This sample demonstrates a NodeJS Azure Function web API secured by Azure AD"
+description: "This sample demonstrates a NodeJS Azure Function Web API secured by Azure AD"
 ---
-# A NodeJS Azure Function web API secured by Azure AD
+# A NodeJS Azure Function Web API secured by Azure AD
 
  1. [Overview](#overview)
  1. [Scenario](#scenario)
@@ -29,11 +29,13 @@ description: "This sample demonstrates a NodeJS Azure Function web API secured b
 
 ## Overview
 
-This sample demonstrates how to secure an [Azure Function]() with [Azure Active Directory (Azure AD)]() when the function uses an [HTTPTrigger]() and exposes a web API. The web API is written using the [express.js]() framework, and the authentication is provided by [passport-azure-ad]() library.
+This sample demonstrates how to secure an [Azure Function](https://docs.microsoft.com/azure/azure-functions/functions-overview) with [Azure Active Directory (Azure AD)](https://docs.microsoft.com/azure/active-directory/fundamentals/active-directory-whatis) where the function uses an [HTTPTrigger](https://docs.microsoft.com/azure/azure-functions/functions-bindings-http-webhook-trigger) and exposes a Web API. The Web API is written in [Node.js](https://nodejs.org) using the [Express](https://expressjs.com/) framework, and the authentication is provided by [passport-azure-ad](https://github.com/AzureAD/passport-azure-ad) library.
+
+The sample further utilizes the [azure-function-express] library, which connects your **Express** application to an [Azure Function handler](https://docs.microsoft.com/azure/azure-functions/functions-reference-node), allowing you to write **Azure Function** applications using the middlewares that you are **already familiar with**.
 
 ## Scenario
 
-1. The client JavaScript SPA application uses the [Microsoft Authentication Library for JavaScript (MSAL.js)]() to obtain a JWT [Access Token]() from **Azure AD**.
+1. The client JavaScript SPA application uses the [Microsoft Authentication Library for JavaScript (MSAL.js)](https://github.com/AzureAD/microsoft-authentication-library-for-js) to obtain a JWT [Access Token](https://docs.microsoft.com/azure/active-directory/develop/access-tokens) from **Azure AD**.
 1. The **Access Token** is then used to authorize the Function app to call **MS Graph API** *on user's behalf*.
 1. Using the **Access Token** from the client, the Function app obtains another **Access Token** and calls to **MS Graph API** *on user's behalf*
 
@@ -179,15 +181,15 @@ Open the project in your IDE (like Visual Studio or Visual Studio Code) to confi
 1. The function app will run on `http://localhost:7071/api` when you test it locally.
 2. The function app will run on `https://<yournodejsfunction>.azurewebsites.net` when you run it deployed to Azure.
 
-You will need a **client** for calling the web API. Refer to the sample: [JavaScript single-page application calling a custom web API with MSAL.js 2.x using the auth code flow with PKCE](https://github.com/Azure-Samples/ms-identity-javascript-callapi).
+You will need a **client** for calling the Web API. Refer to the sample: [JavaScript single-page application calling a custom Web API with MSAL.js 2.x using the auth code flow with PKCE](https://github.com/Azure-Samples/ms-identity-javascript-callapi).
 
 Once you install the **client** app, do:
 
 1. Open the `App\apiConfig.js` file.
-1. Find the key `Enter_the_Web_Api_Uri_Here` and replace the existing value with the coordinates of your web API (e.g. `http://localhost:7071/api`).
-1. Find the key `Enter_the_Web_Api_Scope_Here` and replace the existing value with the scopes for your web API (e.g. `api://cd96451f-9709-4a95-b1f5-79da05cf8502/.default`).
+1. Find the key `Enter_the_Web_Api_Uri_Here` and replace the existing value with the coordinates of your Web API (e.g. `http://localhost:7071/api`).
+1. Find the key `Enter_the_Web_Api_Scope_Here` and replace the existing value with the scopes for your Web API (e.g. `api://cd96451f-9709-4a95-b1f5-79da05cf8502/.default`).
 
-Then, for the **OBO** flow, add this client application as a knownClientApplication. To do so, navigate to **Azure Portal**. Then:
+Then, for the **OBO** flow, add this **client** application as a knownClientApplication. To do so, navigate to **Azure Portal**. Then:
 
 - Find your **App Registration**.
 - Navigate to do **Manifest**.
@@ -208,13 +210,20 @@ Then, for the **OBO** flow, add this client application as a knownClientApplicat
 
 ### Deployment to Azure Functions
 
-There is one web project in this sample. To deploy it to **Azure Functions**, you'll need to:
+There is one web project in this sample. To deploy it to **Function Apps**, you'll need to:
 
-- create an **Azure Function**
-- publish the projects to the **Azure Functions**, and
+- create an **Function App**
+- publish the projects to the **Function Apps**, and
 - update its client(s) to call the deployed function instead of the local environment.
 
 Follow the instructions here to deploy your **Azure Function** app via **VS Code Azure Tools Extension**: [Tutorial: Deploy a Functions app](https://docs.microsoft.com/azure/developer/javascript/tutorial-vscode-serverless-node-04).
+
+> :warning: After deployment, make sure that the [App Service Authentication](https://docs.microsoft.com/azure/app-service/configure-authentication-provider-aad) is turned **off**, as we have manually configured our authentication solution in this sample.
+
+Once you are done, you'll need to update the **client** app to be able to call the deployed **Azure Function**. To do so, follow the steps below:
+
+1. Open the `App\apiConfig.js` file.
+1. Find the key `Enter_the_Web_Api_Uri_Here` and replace the existing value with the coordinates of your Web API (e.g. `https://<yournodejsfunction>.azurewebsites.net/api`).
 
 ## More information
 

@@ -1,17 +1,17 @@
-const createHandler = require("azure-function-express").createHandler;
 const express = require("express");
 const passport = require('passport');
-const https = require("https");
 const fetch = require('node-fetch');
 const qs = require("querystring");
 const auth = require('../auth.json');
 
+const createHandler = require("azure-function-express").createHandler;
+
 const BearerStrategy = require("passport-azure-ad").BearerStrategy;
 
 const options = {
-    identityMetadata: `https://login.microsoftonline.com/${auth.tenantID}/v2.0/.well-known/openid-configuration`,
+    identityMetadata: `https://${auth.authority}/${auth.tenantID}/${auth.version}/${auth.discovery}`,
+    issuer: `https://${auth.authority}/${auth.tenantID}/${auth.version}`,
     clientID: auth.clientID,
-    issuer: `https://login.microsoftonline.com/${auth.tenantID}/v2.0`,
     validateIssuer: auth.validateIssuer,
     audience: auth.audience,
     loggingLevel: auth.loggingLevel,
@@ -37,25 +37,22 @@ app.use((req, res, next) => {
 });
 
 // This is where your API methods are exposed
-app.get(
-    "/api",
-    passport.authenticate("oauth-bearer", { session: false }),
-    function (req, res) {
+app.get("/api", passport.authenticate("oauth-bearer", { session: false }),
+    async (req, res) => {
         console.log("Validated claims: ", JSON.stringify(req.authInfo));
 
         // the access token the user sent
         const userToken = req.get("authorization");
 
         // request new token and use it to call resource API on user's behalf
-        getNewAccessToken(userToken, async (newTokenRes) => {
-            let tokenObj = JSON.parse(newTokenRes);
-            apiResponse = await callResourceAPI(tokenObj['access_token'], auth.resourceUri)
-            res.status(200).json(apiResponse);
-        });
+        let tokenObj = await getNewAccessToken(userToken);
+        let apiResponse = await callResourceAPI(tokenObj['access_token'], auth.resourceUri)
+        res.status(200).json(apiResponse);
     }
 );
 
 async function getNewAccessToken(userToken, callback) {
+
     // is in form "Bearer XYZ..."
     const [bearer, tokenValue] = userToken.split(" ");
 
@@ -101,9 +98,40 @@ async function getNewAccessToken(userToken, callback) {
     req.end();
 }
 
+// async function getNewAccessToken(userToken) {
+
+//     // is in form "Bearer XYZ..."
+//     const [bearer, tokenValue] = userToken.split(" ");
+
+//     let payload = qs.stringify({
+//         grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+//         client_id: auth.clientID,
+//         client_secret: auth.clientSecret,
+//         scope: auth.resourceScope,
+//         assertion: tokenValue,
+//         requested_token_use: 'on_behalf_of'
+//     });
+
+//     let options = {
+//         method: "POST",
+//         headers: {
+//             "Accept": "*/*",
+//             "Cache-control": "no-cache",
+//             "Content-Type": "application/x-www-form-urlencoded",
+//             "Content-Length": Buffer.byteLength(payload)
+//         }
+//     };
+
+//     let response = await fetch(`https://login.microsoftonline.com/${auth.tenantName}/oauth2/v2.0/token`, options);
+
+// 	let json = await response.json();
+    
+//     return json;
+// }
+
 async function callResourceAPI(newTokenValue, resourceURI) {
   
-    const options = {
+    let options = {
         method: "GET",
         headers: {
             "Authorization": `Bearer ${newTokenValue}`,
@@ -111,12 +139,10 @@ async function callResourceAPI(newTokenValue, resourceURI) {
             "Accept": "application/json",
             "Accept-Charset": "utf-8"
         },
-      };
+    };
     
-    const response = await fetch(resourceURI, options);
-
-	const json = await response.json();
-    
+    let response = await fetch(resourceURI, options);
+	let json = await response.json();
     return json;
 }
 
