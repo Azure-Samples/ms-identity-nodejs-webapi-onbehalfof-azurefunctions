@@ -36,7 +36,7 @@ The sample further utilizes the [azure-function-express] library, which connects
 ## Scenario
 
 1. The client JavaScript SPA application uses the [Microsoft Authentication Library for JavaScript (MSAL.js)](https://github.com/AzureAD/microsoft-authentication-library-for-js) to obtain a JWT [Access Token](https://docs.microsoft.com/azure/active-directory/develop/access-tokens) from **Azure AD**.
-1. The **Access Token** is then used to authorize the Function app to call **MS Graph API** *on user's behalf*.
+1. The **Access Token** is then used to authorize the Function app to call **MS Graph API** [on user's behalf](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-on-behalf-of-flow).
 1. Using the **Access Token** from the client, the Function app obtains another **Access Token** and calls to **MS Graph API** *on user's behalf*
 
 ![Overview](./ReadmeFiles/topology.png)
@@ -46,7 +46,8 @@ The sample further utilizes the [azure-function-express] library, which connects
 | File/folder       | Description                                |
 |-------------------|--------------------------------------------|
 | `Function`        | The Azure function source code.            |
-| `AppCreationScripts`| The Azure function source code.            |
+| `Function/MyHttpTrigger` | App logic resides here.     |
+| `AppCreationScripts`| The Azure function source code.          |
 | `ReadmeFiles`     | Images used in readme.md.                  |
 | `CHANGELOG.md`    | List of changes to the sample.             |
 | `CONTRIBUTING.md` | Guidelines for contributing to the sample. |
@@ -176,12 +177,12 @@ Open the project in your IDE (like Visual Studio or Visual Studio Code) to confi
     func start
 ```
 
+1. The function app will run on `http://localhost:7071/api` when you test it locally.
+1. The function app will run on `https://<yournodejsfunction>.azurewebsites.net` when you run it deployed to Azure.
+
 ## Explore the sample
 
-1. The function app will run on `http://localhost:7071/api` when you test it locally.
-2. The function app will run on `https://<yournodejsfunction>.azurewebsites.net` when you run it deployed to Azure.
-
-You will need a **client** for calling the Web API. Refer to the sample: [JavaScript single-page application calling a custom Web API with MSAL.js 2.x using the auth code flow with PKCE](https://github.com/Azure-Samples/ms-identity-javascript-callapi).
+You will need a **client** app for calling the Web API. Refer to the sample: [JavaScript single-page application calling a custom Web API with MSAL.js 2.x using the auth code flow with PKCE](https://github.com/Azure-Samples/ms-identity-javascript-callapi).
 
 Once you install the **client** app, do:
 
@@ -189,11 +190,11 @@ Once you install the **client** app, do:
 1. Find the key `Enter_the_Web_Api_Uri_Here` and replace the existing value with the coordinates of your Web API (e.g. `http://localhost:7071/api`).
 1. Find the key `Enter_the_Web_Api_Scope_Here` and replace the existing value with the scopes for your Web API (e.g. `api://cd96451f-9709-4a95-b1f5-79da05cf8502/.default`).
 
-Then, for the **OBO** flow, add this **client** application as a knownClientApplication. To do so, navigate to **Azure Portal**. Then:
+For the **on-behalf-of** flow, we need to add this **client** application as a `knownClientApplication` i.e. navigate to **Azure Portal**. Then:
 
 - Find your **App Registration**.
 - Navigate to do **Manifest**.
-- Add the Application ID (client ID) of your client app as:
+- Add the **Application ID** (client ID) of your **client** app as:
 
 ```json
     "knownClientApplications": ["<your-client-app-ID>"],
@@ -203,8 +204,26 @@ Then, for the **OBO** flow, add this **client** application as a knownClientAppl
 
 ## About the code
 
-> - Describe where the code uses auth libraries, or calls the graph
-> - Describe specific aspects (e.g. caching, validation etc.)
+### Function configuration
+
+There are 3 files in the sample that are used to configure the function app:
+
+- `Function/auth.json`
+This file contains the configuration parameters that are used for authentication and token acquisition.
+
+- `Function/host.json`
+This file contains the configuration parameters that are used by the **Azure Functions Core Tools** package in local environment. When deployed, this file will overwritten by **Azure App Services**.
+
+- `Function/MyHttpTrigger/function.json`
+This file contains the configuration parameters for the behavior of the function web api. In particular, it defines the accepted http verbs and the exposed API endpoint.
+
+> :information_source: `{*segments}` parameter is not used and could be anything. For more information, [see](https://github.com/Azure/azure-functions-host/wiki/Http-Functions).
+
+### /.default scope and combined consent
+
+Notice that we have set the scope in the **client** app as `api://cd96451f-9709-4a95-b1f5-79da05cf8502/.default`, instead of `api://cd96451f-9709-4a95-b1f5-79da05cf8502/user_impersonation`? [/.default](https://docs.microsoft.com/azure/active-directory/develop/v2-permissions-and-consent#the-default-scope) is a built-in scope for every application that refers to the static list of permissions configured on the application registration in **Azure Portal**. Basically, it bundles all the permissions in one scope, thus allowing you to grant combined consent to both the **client** app and the **web API**.
+
+Furthermore, we had configured the `knownClientApplications` attribute in **application manifest**. This attribute is used for bundling consent if you have a solution that contains two (or more) parts: a **client** app and a custom **web API**. If you enter the appID (clientID) of the client app into this array, the user will only have to consent once to the client app. **Azure AD** will know that consenting to the client means implicitly consenting to the web API.
 
 ## Deployment
 
