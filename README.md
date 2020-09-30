@@ -8,7 +8,7 @@ products:
   - azure-active-directory
 name: A NodeJS Azure Function Web API secured by Azure AD
 urlFragment: ms-identity-nodejs-webapi-onbehalfof-azurefunctions
-description: "This sample demonstrates a Node.js Azure Function Web API secured by Azure AD calling MS Graph API on behalf of a signed-in user"
+description: "This sample demonstrates a Node.js Azure Function secured by Azure AD calling MS Graph on behalf of a signed-in user"
 ---
 # A Node.js Azure Function Web API secured by Azure AD and calling MS Graph API on behalf of a user
 
@@ -29,18 +29,15 @@ description: "This sample demonstrates a Node.js Azure Function Web API secured 
 
 ## Overview
 
-This sample demonstrates how to secure an [Azure Function]() with [Azure Active Directory (Azure AD)]() when the function uses an [HTTPTrigger]() and exposes a web API. The web API is written using the [express.js]() framework, and the authentication is provided by [passport-azure-ad]() library.
-
-
 This sample demonstrates how to secure an [Azure Function](https://docs.microsoft.com/azure/azure-functions/functions-overview) with the [Microsoft identity platform](https://docs.microsoft.com/azure/active-directory/develop/). The function uses a [HTTPTrigger](https://docs.microsoft.com/azure/azure-functions/functions-bindings-http-webhook-trigger) and exposes a Web API. The Web API is written in [Node.js](https://nodejs.org) using the [Express](https://expressjs.com/) framework, and the authorization is provided by the [passport-azure-ad](https://github.com/AzureAD/passport-azure-ad) library.
 
 The sample further utilizes the [azure-function-express] library, which connects your **Express** application to an [Azure Function handler](https://docs.microsoft.com/azure/azure-functions/functions-reference-node), allowing you to write **Azure Function** applications using the middlewares that you are **already familiar with**.
 
 ## Scenario
 
-1. The client JavaScript SPA application uses the [Microsoft Authentication Library for JavaScript (MSAL.js)](https://github.com/AzureAD/microsoft-authentication-library-for-js) to sign-in a user and obtain a JWT [Access Token](https://docs.microsoft.com/azure/active-directory/develop/access-tokens) from the Microsoft identity platform (Azure AD) for the Web API.
-1. The **Access Token** is then used to authorize the Function app to call **MS Graph API** [on user's behalf](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-on-behalf-of-flow).
-1. Using the **Access Token** from the client, the Function app obtains another **Access Token** and calls to **MS Graph API** *on user's behalf*
+1. The client JavaScript SPA application uses the [Microsoft Authentication Library for JavaScript (MSAL.js)](https://github.com/AzureAD/microsoft-authentication-library-for-js) to sign-in a user and obtain a JWT [Access Token](https://docs.microsoft.com/azure/active-directory/develop/access-tokens) from the Microsoft identity platform (Azure AD) for the Web API (Azure Function).
+1. The **Access Token** is then used to authorize the the call to the Function App.
+1. In the function app, using the **Access Token** received from the client, the Function app obtains another **Access Token** using the [on user's behalf](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-on-behalf-of-flow) and calls the **MS Graph API** *on user's behalf* again.
 
 ![Overview](./ReadmeFiles/topology.png)
 
@@ -225,7 +222,7 @@ This file contains the configuration parameters for the behavior of the function
 
 ### /.default scope and combined consent
 
-Notice that we have set the scope in the **client** app as `api://cd96451f-9709-4a95-b1f5-79da05cf8502/.default`, instead of `api://cd96451f-9709-4a95-b1f5-79da05cf8502/user_impersonation`? [/.default](https://docs.microsoft.com/azure/active-directory/develop/v2-permissions-and-consent#the-default-scope) is a built-in scope for every application that refers to the static list of permissions configured on the application registration in **Azure Portal**. Basically, it bundles all the permissions in one scope, thus allowing you to grant combined consent to both the **client** app and the **web API**.
+Notice that we have set the scope in the **client** app as `api://cd96451f-9709-4a95-b1f5-79da05cf8502/.default`, instead of `api://cd96451f-9709-4a95-b1f5-79da05cf8502/access_as_user`? [/.default](https://docs.microsoft.com/azure/active-directory/develop/v2-permissions-and-consent#the-default-scope) is a built-in scope for every application that refers to the static list of permissions configured on the application registration in **Azure Portal**. Basically, it bundles all the permissions from the function and MS Graph in one call, thus allowing you to grant combined consent to both the **client** app and the **web API**.
 
 Furthermore, we had configured the `knownClientApplications` attribute in **application manifest**. This attribute is used for bundling consent if you have a solution that contains two (or more) parts: a **client** app and a custom **web API**. If you enter the appID (clientID) of the client app into this array, the user will only have to consent once to the client app. **Azure AD** will know that consenting to the client means implicitly consenting to the web API.
 
