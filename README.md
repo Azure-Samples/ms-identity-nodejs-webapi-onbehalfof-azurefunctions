@@ -171,7 +171,6 @@ Open the project in your IDE (like Visual Studio or Visual Studio Code) to confi
 1. Find the key `clientID` and replace the existing value with the **application ID** (clientId) of the `ms-identity-nodejs-webapi-onbehalfof-azurefunctions` application copied from the Azure portal.
 1. Find the key `tenantID` and replace the existing value with your Azure AD **tenant ID**.
 1. Find the key `audience` and replace the existing value with the **application ID** (clientId) of the `ms-identity-nodejs-webapi-onbehalfof-azurefunctions` application copied from the Azure portal.
-1. Find the key `scope` and replace the existing value with the scope `user_impersonation`.
 
 ## Running the sample
 
@@ -180,8 +179,10 @@ Open the project in your IDE (like Visual Studio or Visual Studio Code) to confi
     func start
 ```
 
-1. The function app will run on `http://localhost:7071/api` when you test it locally.
-1. The function app will run on `https://<yournodejsfunction>.azurewebsites.net` when you run it deployed to Azure.
+> :information_source: While in **VS Code**, you can simply press **F5** to run the application. Make sure that a **VS Code** cache folder `.vscode` exists for configuration.
+
+- The function app will run on `http://localhost:7071/api` when you test it locally.
+- The function app will run on `https://<yournodejsfunction>.azurewebsites.net/api` when you run it deployed to Azure.
 
 ## Explore the sample
 
@@ -241,6 +242,8 @@ There is one web project in this sample. To deploy it to **Function Apps**, you'
 Follow the instructions here to deploy your **Azure Function** app via **VS Code Azure Tools Extension**: [Tutorial: Deploy a Functions app](https://docs.microsoft.com/azure/developer/javascript/tutorial-vscode-serverless-node-04).
 
 > :warning: After deployment, make sure that the [App Service Authentication](https://docs.microsoft.com/azure/app-service/configure-authentication-provider-aad) is turned **off**, as we have manually configured our authentication solution in this sample.
+
+> :warning: After deployment, navigate to the **CORS** blade on the portal and enable it. Once you do, add your **client** application's domain.
 
 Once you are done, you'll need to update the **client** app to be able to call the deployed **Azure Function**. To do so, follow the steps below:
 
