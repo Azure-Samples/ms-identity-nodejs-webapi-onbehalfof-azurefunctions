@@ -17,7 +17,7 @@ const options = {
     passReqToCallback: auth.passReqToCallback,
 };
 
-const bearerStrategy = new BearerStrategy(options, function (token, done) {
+const bearerStrategy = new BearerStrategy(options, (token, done) => {
     done(null, {}, token);
 });
 
