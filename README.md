@@ -29,13 +29,16 @@ description: "This sample demonstrates a Node.js Azure Function Web API secured 
 
 ## Overview
 
-This sample demonstrates how to secure an [Azure Function](https://docs.microsoft.com/azure/azure-functions/functions-overview) with [Azure Active Directory (Azure AD)](https://docs.microsoft.com/azure/active-directory/fundamentals/active-directory-whatis) where the function uses an [HTTPTrigger](https://docs.microsoft.com/azure/azure-functions/functions-bindings-http-webhook-trigger) and exposes a Web API. The Web API is written in [Node.js](https://nodejs.org) using the [Express](https://expressjs.com/) framework, and the authentication is provided by [passport-azure-ad](https://github.com/AzureAD/passport-azure-ad) library.
+This sample demonstrates how to secure an [Azure Function]() with [Azure Active Directory (Azure AD)]() when the function uses an [HTTPTrigger]() and exposes a web API. The web API is written using the [express.js]() framework, and the authentication is provided by [passport-azure-ad]() library.
+
+
+This sample demonstrates how to secure an [Azure Function](https://docs.microsoft.com/azure/azure-functions/functions-overview) with the [Microsoft identity platform](https://docs.microsoft.com/azure/active-directory/develop/). The function uses a [HTTPTrigger](https://docs.microsoft.com/azure/azure-functions/functions-bindings-http-webhook-trigger) and exposes a Web API. The Web API is written in [Node.js](https://nodejs.org) using the [Express](https://expressjs.com/) framework, and the authorization is provided by the [passport-azure-ad](https://github.com/AzureAD/passport-azure-ad) library.
 
 The sample further utilizes the [azure-function-express] library, which connects your **Express** application to an [Azure Function handler](https://docs.microsoft.com/azure/azure-functions/functions-reference-node), allowing you to write **Azure Function** applications using the middlewares that you are **already familiar with**.
 
 ## Scenario
 
-1. The client JavaScript SPA application uses the [Microsoft Authentication Library for JavaScript (MSAL.js)](https://github.com/AzureAD/microsoft-authentication-library-for-js) to obtain a JWT [Access Token](https://docs.microsoft.com/azure/active-directory/develop/access-tokens) from **Azure AD**.
+1. The client JavaScript SPA application uses the [Microsoft Authentication Library for JavaScript (MSAL.js)](https://github.com/AzureAD/microsoft-authentication-library-for-js) to sign-in a user and obtain a JWT [Access Token](https://docs.microsoft.com/azure/active-directory/develop/access-tokens) from the Microsoft identity platform (Azure AD) for the Web API.
 1. The **Access Token** is then used to authorize the Function app to call **MS Graph API** [on user's behalf](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-on-behalf-of-flow).
 1. Using the **Access Token** from the client, the Function app obtains another **Access Token** and calls to **MS Graph API** *on user's behalf*
 
