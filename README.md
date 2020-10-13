@@ -8,9 +8,9 @@ products:
   - azure-active-directory
 name: A NodeJS Azure Function Web API secured by Azure AD
 urlFragment: ms-identity-nodejs-webapi-onbehalfof-azurefunctions
-description: "This sample demonstrates a Node.js Azure Function secured by Azure AD calling MS Graph on behalf of a signed-in user"
+description: "This sample demonstrates a Node.js Azure Function secured by Azure AD calling MS Graph on behalf of a signed-in user (on-behalf-of flow)"
 ---
-# A Node.js Azure Function Web API secured by Azure AD and calling MS Graph API on behalf of a user
+# A Node.js Azure Function Web API secured by Azure AD and calling MS Graph API on behalf of a user (on-behalf-of flow)
 
  1. [Overview](#overview)
  1. [Scenario](#scenario)
@@ -33,9 +33,11 @@ This sample demonstrates how to secure an [Azure Function](https://docs.microsof
 
 The sample further utilizes the [azure-function-express] library, which connects your **Express** application to an [Azure Function handler](https://docs.microsoft.com/azure/azure-functions/functions-reference-node), allowing you to write **Azure Function** applications using the middlewares that you are **already familiar with**.
 
+The sample is coupled with a client Vanilla JavaScript single-page application that will allow you to call and test your function app.
+
 ## Scenario
 
-1. The client JavaScript SPA application uses the [Microsoft Authentication Library for JavaScript (MSAL.js)](https://github.com/AzureAD/microsoft-authentication-library-for-js) to sign-in a user and obtain a JWT [Access Token](https://docs.microsoft.com/azure/active-directory/develop/access-tokens) from the Microsoft identity platform (Azure AD) for the Web API (Azure Function).
+1. The client application uses the [Microsoft Authentication Library for JavaScript (MSAL.js)](https://github.com/AzureAD/microsoft-authentication-library-for-js) to sign-in a user and obtain a JWT [Access Token](https://docs.microsoft.com/azure/active-directory/develop/access-tokens) from the Microsoft identity platform (Azure AD) for the Web API (Azure Function).
 1. The **Access Token** is then used to authorize the the call to the Function App.
 1. In the function app, using the **Access Token** received from the client, the Function app obtains another **Access Token** using the [on user's behalf](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-on-behalf-of-flow) and calls the **MS Graph API** *on user's behalf* again.
 
@@ -45,14 +47,10 @@ The sample further utilizes the [azure-function-express] library, which connects
 
 | File/folder       | Description                                |
 |-------------------|--------------------------------------------|
-| `Function`        | The Azure function source code.            |
-| `Function/MyHttpTrigger` | App logic resides here.     |
-| `AppCreationScripts`| The Azure function source code.          |
+| `Client`          | Client JavaScript SPA source code.         |
+| `Function`        | The Azure Function web API source code.            |
+| `AppCreationScripts`| Contains Powershell scripts to automate app registration. |
 | `ReadmeFiles`     | Images used in readme.md.                  |
-| `CHANGELOG.md`    | List of changes to the sample.             |
-| `CONTRIBUTING.md` | Guidelines for contributing to the sample. |
-| `SECURITY.md`     | Security disclosures for the sample.       |
-| `LICENSE`         | The license for the sample.                |
 
 ## Prerequisites
 
@@ -83,6 +81,9 @@ or download and extract the repository .zip file.
 ```console
     cd ms-identity-nodejs-webapi-onbehalfof-azurefunctions
     cd Function
+    npm install
+    cd ..
+    cd Client
     npm install
 ```
 
@@ -157,6 +158,8 @@ The first thing that we need to do is to declare the unique [resource](https://d
         - For **User consent description** type `Allow the application to access ms-identity-nodejs-webapi-onbehalfof-azurefunctions on your behalf.`
         - Keep **State** as **Enabled**
         - Click on the **Add scope** button on the bottom to save this scope.
+1. In the app's registration screen, select the **Manifest** blade. Then:
+   - Find the key `"accessTokenAcceptedVersion"` and replace the existing value with **2** i.e. `"accessTokenAcceptedVersion": 2`.
 
 #### Configure the service app (ms-identity-nodejs-webapi-onbehalfof-azurefunctions) to use your app registration
 
@@ -168,11 +171,62 @@ Open the project in your IDE (like Visual Studio or Visual Studio Code) to confi
 1. Find the key `clientID` and replace the existing value with the **application ID** (clientId) of the `ms-identity-nodejs-webapi-onbehalfof-azurefunctions` application copied from the Azure portal.
 1. Find the key `tenantID` and replace the existing value with your Azure AD **tenant ID**.
 1. Find the key `audience` and replace the existing value with the **application ID** (clientId) of the `ms-identity-nodejs-webapi-onbehalfof-azurefunctions` application copied from the Azure portal.
+1. Find the key `clientSecret`  and replace the existing value with the **Client Secret** of the `ms-identity-nodejs-webapi-onbehalfof-azurefunctions` application copied from the Azure portal.
+
+#### Register the client app (ms-identity-javascript-callapi)
+
+1. Navigate to the Microsoft identity platform for developers [App registrations](https://go.microsoft.com/fwlink/?linkid=2083908) page.
+1. Select **New registration**.
+1. In the **Register an application page** that appears, enter your application's registration information:
+   - In the **Name** section, enter a meaningful application name that will be displayed to users of the app, for example `ms-identity-javascript-callapi`.
+   - Under **Supported account types**, select **Accounts in your organizational directory only**.
+   - In the **Redirect URI (optional)** section, select **Single-Page Application** in the combo-box and enter the following redirect URI: `http://localhost:3000/`.
+1. Select **Register** to create the application.
+1. In the app's registration screen, find and note the **Application (client) ID**. You use this value in your app's configuration file(s) later in your code.
+1. Select **Save** to save your changes.
+1. In the app's registration screen, click on the **API Permissions** blade in the left to open the page where we add access to the APIs that your application needs.
+    - Click the **Add a permission** button and then,
+    - Ensure that the **My APIs** tab is selected.
+    - In the list of APIs, select the API **TodoListAPI**.
+    - In the **Delegated permissions** section, select the **user_impersonation** in the list. Use the search box if necessary.
+    - Click on the **Add permissions** button at the bottom.
+
+For the **on-behalf-of** flow, we need to designate this **client** application as a `knownClientApplication` for the service app. To do so, **you need to go back to the App Registration for the service app** (`ms-identity-nodejs-webapi-onbehalfof-azurefunctions`).
+
+Navigate to **Azure Portal**. Then:
+
+1. Find your **App Registration**.
+2. Navigate to do **Manifest**.
+3. Add the **Application ID** (client ID) of your **client** app as:
+
+```json
+    "knownClientApplications": ["<your-client-app-ID>"],
+```
+
+#### Configure the client app (ms-identity-javascript-callapi) to use your app registration
+
+Open the project in your IDE (like Visual Studio or Visual Studio Code) to configure the code.
+
+> In the steps below, "ClientID" is the same as "Application ID" or "AppId".
+
+Open the `Client/App/authConfig.js` file. Then:
+
+1. Find the key `Enter_the_Application_Id_Here` and replace the existing value with the application ID (clientId) of the `ms-identity-javascript-callapi` application copied from the Azure portal.
+1. Find the key `Enter_the_Cloud_Instance_Id_Here/Enter_the_Tenant_Info_Here` and replace the existing value with `https://login.microsoftonline.com/<your-tenant-id>`.
+1. Find the key `Enter_the_Redirect_Uri_Here` and replace the existing value with the base address of the ms-identity-javascript-callapi project (by default `http://localhost:3000`).
+
+After you configured your web API, open the `Client/App/apiConfig.js` file. Then:
+
+1. Find the key `Enter_the_Web_Api_Uri_Here` and replace the existing value with the coordinates of your web API.
+1. Find the key `Enter_the_Web_Api_Scope_Here` and replace the existing value with the scopes for your web API, like `api://e767d418-b80b-4568-9754-557f40697fc5/user_impersonation`. You can copy this from the **Expose an API** blade of the web APIs registration.
 
 ## Running the sample
 
+Run the service:
+
 ```console
     cd ms-identity-nodejs-webapi-onbehalfof-azurefunctions
+    cd Function
     func start
 ```
 
@@ -181,25 +235,25 @@ Open the project in your IDE (like Visual Studio or Visual Studio Code) to confi
 - The function app will run on `http://localhost:7071/api` when you test it locally.
 - The function app will run on `https://<yournodejsfunction>.azurewebsites.net/api` when you run it deployed to Azure.
 
+Run the client:
+
+```console
+    cd ms-identity-javascript-callapi
+    cd Client
+    npm start
+```
+
 ## Explore the sample
 
-You will need a **client** app for calling the Web API. Refer to the sample: [JavaScript single-page application calling a custom Web API with MSAL.js 2.x using the auth code flow with PKCE](https://github.com/Azure-Samples/ms-identity-javascript-callapi).
+1. Open your browser and navigate to `http://localhost:3000`.
+1. Click the **sign-in** button on the top right corner.
+1. Once you authenticate, click the **Call API** button at the center.
 
-Once you install the **client** app, do:
+![Screenshot](./ReadmeFiles/screenshot.png)
 
-1. Open the `App\apiConfig.js` file.
-1. Find the key `Enter_the_Web_Api_Uri_Here` and replace the existing value with the coordinates of your Web API (e.g. `http://localhost:7071/api`).
-1. Find the key `Enter_the_Web_Api_Scope_Here` and replace the existing value with the scopes for your Web API (e.g. `api://cd96451f-9709-4a95-b1f5-79da05cf8502/.default`).
+> :information_source: Did the sample not work for you as expected? Then please reach out to us using the [GitHub Issues](../../../../issues) page.
 
-For the **on-behalf-of** flow, we need to add this **client** application as a `knownClientApplication` i.e. navigate to **Azure Portal**. Then:
-
-- Find your **App Registration**.
-- Navigate to do **Manifest**.
-- Add the **Application ID** (client ID) of your **client** app as:
-
-```json
-    "knownClientApplications": ["<your-client-app-ID>"],
-```
+> :information_source: Consider taking a moment to [share your experience with us](https://forms.office.com/Pages/ResponsePage.aspx?id=v4j5cvGGr0GRqy180BHbR73pcsbpbxNJuZCMKN0lURpUM1NGU0ZMRVZQRTFBTjQ3MVRIQUFVTDBNMCQlQCN0PWcu)
 
 > :information_source: Did the sample not work for you as expected? Then please reach out to us using the [GitHub Issues](../../../../issues) page.
 
@@ -222,9 +276,64 @@ This file contains the configuration parameters for the behavior of the function
 
 ### /.default scope and combined consent
 
-Notice that we have set the scope in the **client** app as `api://cd96451f-9709-4a95-b1f5-79da05cf8502/.default`, instead of `api://cd96451f-9709-4a95-b1f5-79da05cf8502/access_as_user`? [/.default](https://docs.microsoft.com/azure/active-directory/develop/v2-permissions-and-consent#the-default-scope) is a built-in scope for every application that refers to the static list of permissions configured on the application registration in **Azure Portal**. Basically, it bundles all the permissions from the function and MS Graph in one call, thus allowing you to grant combined consent to both the **client** app and the **web API**.
+Notice that we have set the scope in the **client** app as `api://cd96451f-9709-4a95-b1f5-79da05cf8502/.default`, instead of `api://cd96451f-9709-4a95-b1f5-79da05cf8502/user_impersonation`? [/.default](https://docs.microsoft.com/azure/active-directory/develop/v2-permissions-and-consent#the-default-scope) is a built-in scope for every application that refers to the static list of permissions configured on the application registration in **Azure Portal**. Basically, it bundles all the permissions from the function and MS Graph in one call, thus allowing you to grant combined consent to both the **client** app and the **web API**.
 
 Furthermore, we had configured the `knownClientApplications` attribute in **application manifest**. This attribute is used for bundling consent if you have a solution that contains two (or more) parts: a **client** app and a custom **web API**. If you enter the appID (clientID) of the client app into this array, the user will only have to consent once to the client app. **Azure AD** will know that consenting to the client means implicitly consenting to the web API.
+
+### Acquire a Token
+
+**Access Token** requests in **MSAL.js** are meant to be *per-resource-per-scope(s)*. This means that an **Access Token** requested for resource **A** with scope `scp1`:
+
+- cannot be used for accessing resource **A** with scope `scp2`, and,
+- cannot be used for accessing resource **B** of any scope.
+
+The intended recipient of an **Access Token** is represented by the `aud` claim; in case the value for the `aud` claim does not mach the resource APP ID URI, the token should be considered invalid. Likewise, the permissions that an Access Token grants is represented by the `scp` claim. See [Access Token claims](https://docs.microsoft.com/azure/active-directory/develop/access-tokens#payload-claims) for more information.
+
+**MSAL.js** exposes 3 APIs for acquiring a token: `acquireTokenPopup()`, `acquireTokenRedirect()` and `acquireTokenSilent()`:
+
+```javascript
+    myMSALObj.acquireTokenPopup(request)
+        .then(response => {
+            // do something with response
+        })
+        .catch(error => {
+            console.log(error)
+        });
+```
+
+For `acquireTokenRedirect()`, you must register a redirect promise handler:
+
+```javascript
+    myMSALObj.handleRedirectPromise()
+        .then(response => {
+            // do something with response
+        })
+        .catch(error => {
+            console.log(error);
+        });
+
+    myMSALObj.acquireTokenRedirect(request);
+```
+
+The **MSAL.js** exposes the `acquireTokenSilent()` API which is meant to retrieve non-expired token silently.
+
+```javascript
+    msalInstance.acquireTokenSilent(request)
+        .then(tokenResponse => {
+        // Do something with the tokenResponse
+        }).catch(async (error) => {
+            if (error instanceof InteractionRequiredAuthError) {
+                // fallback to interaction when silent call fails
+                return myMSALObj.acquireTokenPopup(request);
+            }
+        }).catch(error => {
+            handleError(error);
+        });
+```
+
+### Token validation
+
+Clients should treat access tokens as opaque strings, as the contents of the token are intended for the resource only (such as a web API or Microsoft Graph). For validation and debugging purposes, developers can decode **JWT**s (*JSON Web Tokens*) using a site like [jwt.ms](https://jwt.ms).
 
 ## Deployment
 
